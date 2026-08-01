@@ -52,6 +52,32 @@ bash install.sh strategy-advisor
 
 ---
 
+## 週1回、自動で最新化する（任意）
+
+3台それぞれで導入コマンドを手動で打ち直す代わりに、Claude Code 起動時に自動でチェックさせることができる。**各マシンで最初に1回だけ実行すれば、以後は何もしなくていい。**
+
+### macOS / Linux / WSL
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/oozoro/claude-skills/main/hooks/setup-weekly-sync.sh | bash
+```
+
+### Windows（PowerShell）
+
+```powershell
+irm https://raw.githubusercontent.com/oozoro/claude-skills/main/hooks/setup-weekly-sync.ps1 | iex
+```
+
+これは `~/.claude/settings.json`（Windows は `%USERPROFILE%\.claude\settings.json`）に SessionStart フックを1件追加するだけで、既存の設定は保持される。何度実行しても二重登録しない。
+
+**動作:** Claude Code を起動するたびに、前回の同期から7日以内なら何もせず即終了する（通信しない）。7日以上経っていれば、バックグラウンドで `install.sh` を実行してスキルを最新化する。起動が遅くなることはない（非同期実行）。ログは `~/.claude/skills/.claude-skills-sync.log` に残る。
+
+Windows でもフック自体は bash（Git for Windows 同梱の Git Bash）で動く。Git for Windows が入っていない環境では動作しない。
+
+無効化したい場合は、`~/.claude/settings.json` の `hooks.SessionStart` から `.claude-skills-last-sync` を含むエントリを削除する。
+
+---
+
 ## スキルを更新するとき
 
 1. `skills/<name>/` を編集して main に push する
@@ -80,6 +106,9 @@ skills/
 └── strategy-advisor.skill     claude.ai / デスクトップアプリ用のバンドル
 install.sh                     macOS / Linux / WSL
 install.ps1                    Windows
+hooks/
+├── setup-weekly-sync.sh       週1自動同期フックの登録（macOS / Linux / WSL）
+└── setup-weekly-sync.ps1      同上（Windows）
 ```
 
 インストーラの参照先は環境変数で差し替えられる。フォークした場合などに使う。
